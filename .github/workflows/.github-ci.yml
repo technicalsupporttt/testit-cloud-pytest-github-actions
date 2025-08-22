@@ -3,7 +3,12 @@ name: Pytest
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:  # Add this to enable manual triggers
+  workflow_dispatch:
+    inputs:
+      test_run_id:
+        description: 'Test Run ID'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -32,7 +37,7 @@ jobs:
         testit autotests_filter \
           --url https://team-4y6k.testit.software \
           --configuration-id 0198d162-1544-744f-a04b-3276d36b9e56 \
-          --testrun-id 3f91fb59-e8ec-4349-80a1-cb25832c7225 \
+          --testrun-id ${TEST_RUN_ID} \
           --framework pytest \
           --disable-cert-validation \
           --output tmp/filter.txt
@@ -41,7 +46,7 @@ jobs:
           --tmsProjectId=0198d162-1514-7157-a67d-82bd275ba589 \
           --tmsPrivateToken=ZWQ4M0Vnc3FFZ0t6VlY0QjRO \
           --tmsUrl=https://team-4y6k.testit.software \
-          --tmsTestRunId=3f91fb59-e8ec-4349-80a1-cb25832c7225 \
+          --tmsTestRunId=${TEST_RUN_ID} \
           --tmsAdapterMode=1 \
           --tmsCertValidation=false \
           --testit
