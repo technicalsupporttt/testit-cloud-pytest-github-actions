@@ -3,12 +3,8 @@ name: Pytest
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:
-    inputs:
-      test_run_id:
-        description: 'Test Run ID'
-        required: true
-        type: string
+  repository_dispatch:  
+    types: [run-tests] 
 
 permissions:
   contents: read
@@ -29,6 +25,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
   
+    - name: Get TEST_RUN_ID from webhook
+      run: |
+        echo "TEST_RUN_ID: ${{ github.event.client_payload.test_run_id }}"
+        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}" >> $GITHUB_ENV
+    
+    - name: Create tmp directory
+      run: mkdir -p tmp
+  
     - name: Submit results
       if: always()
       run: |
@@ -37,16 +41,23 @@ jobs:
         testit autotests_filter \
           --url https://team-4y6k.testit.software \
           --configuration-id 0198d162-1544-744f-a04b-3276d36b9e56 \
-          --testrun-id ${TEST_RUN_ID} \
+          --testrun-id $TEST_RUN_ID \  
           --framework pytest \
           --disable-cert-validation \
           --output tmp/filter.txt
+        
+        # Проверяем что файл не пустой
+        if [ ! -s "tmp/filter.txt" ]; then
+          echo "No tests to run!"
+          exit 0
+        fi
+        
         pytest "$(cat tmp/filter.txt)" \
           --tmsConfigurationId=0198d162-1544-744f-a04b-3276d36b9e56 \
           --tmsProjectId=0198d162-1514-7157-a67d-82bd275ba589 \
           --tmsPrivateToken=ZWQ4M0Vnc3FFZ0t6VlY0QjRO \
           --tmsUrl=https://team-4y6k.testit.software \
-          --tmsTestRunId=${TEST_RUN_ID} \
+          --tmsTestRunId=$TEST_RUN_ID \  
           --tmsAdapterMode=1 \
           --tmsCertValidation=false \
           --testit
